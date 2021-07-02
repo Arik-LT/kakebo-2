@@ -25,34 +25,43 @@ def movimientosAPI():
 @app.route('/api/v1/movimiento', methods=['POST'])
 def detalleMovimiento(id=None):
 
-  try:
-      if request.method in ('GET', 'PUT', 'DELETE'):
-          movimiento = dbManager.consultaUnaSQL("SELECT * FROM movimientos WHERE id = ?", [id])
-      
-      if request.method == 'GET':
-          if movimiento:
-              return jsonify({
-                  "status": "success",
-                  "movimiento": movimiento
-              })
-          else:
-              return jsonify({"status": "fail", "mensaje": "movimiento no encontrado"}), HTTPStatus.NOT_FOUND  # manda el mensaje aunque salga un 404  (Importado arriba)
+    try:
+        if request.method in ('GET', 'PUT', 'DELETE'):
+            movimiento = dbManager.consultaUnaSQL("SELECT * FROM movimientos WHERE id = ?", [id])
+        
+        if request.method == 'GET':
+            if movimiento:
+                return jsonify({
+                    "status": "success",
+                    "movimiento": movimiento
+                    # podemos añadir saldo aqui
+                })
+            else:
+                return jsonify({"status": "fail", "mensaje": "movimiento no encontrado"}), HTTPStatus.NOT_FOUND  # manda el mensaje aunque salga un 404  (Importado arriba)
 
-      if request.method == 'PUT':
-          dbManager.modificaTablaSQL("""
-              UPDATE movimientos 
-              SET fecha=:fecha, concepto=:concepto, esGasto=:esGasto, categoria=:categoria, cantidad=:cantidad 
-              WHERE id = {}""".format(id), request.json) # el request json muy importante
+        if request.method == 'PUT':
+            dbManager.modificaTablaSQL("""
+                UPDATE movimientos 
+                SET fecha=:fecha, concepto=:concepto, esGasto=:esGasto, categoria=:categoria, cantidad=:cantidad 
+                WHERE id = {}""".format(id), request.json) # el request json muy importante
 
-          return jsonify({"status": "success", "mensaje": "registro modificado"})
-  except sqlite3.Error as e:
-      return jsonify({"status": "fail", "mensaje": "Error en base de datos: {}".format(e)}), HTTPStatus.BAD_REQUEST
+            return jsonify({"status": "success", "mensaje": "registro modificado"})
 
+        if request.method == 'DELETE':
+            dbManager.modificaTablaSQL("""
+                DELETE FROM movimientos 
+                WHERE id = ?""", [id])
 
+            return jsonify({"status": "success", "mensaje": "registro borrado"})
 
+        if request.method == 'POST':
+            dbManager.modificaTablaSQL("""
+                INSERT INTO movimientos 
+                (fecha, concepto, esGasto, categoria, cantidad)
+                VALUES (:fecha, :concepto, :esGasto, :categoria, :cantidad) 
+                """, request.json)
+            return jsonify({"status": "success", "mensaje": "registro creado"}), HTTPStatus.CREATED
 
-
-
-
-
+    except sqlite3.Error as e:
+        return jsonify({"status": "fail", "mensaje": "Error en base de datos: {}".format(e)}), HTTPStatus.BAD_REQUEST
 
